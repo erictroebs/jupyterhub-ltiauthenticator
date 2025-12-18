@@ -4,7 +4,7 @@ import json
 import re
 import uuid
 from typing import Any, Dict, Optional, cast
-from urllib.parse import quote, unquote, urlparse
+from urllib.parse import quote, unquote, urlparse, urlencode
 
 from jupyterhub.handlers import BaseHandler  # type: ignore
 from jupyterhub.utils import url_path_join  # type: ignore
@@ -393,11 +393,16 @@ class LTI13CallbackHandler(BaseHandler):
         self.log.debug(f"user logged in: {user}")
         if user is None:
             raise HTTPError(403, "User missing or null")
-        await self.redirect_to_next_url(user)
+        await self.redirect_to_next_url(user, id_token)
 
-    async def redirect_to_next_url(self, user):
+    async def redirect_to_next_url(self, user, id_token):
         """Redirect user agent to next url that has been received in the login initiation request."""
         next_url = self.get_next_url(user)
+
+        # add deep_linking_settings if available in id_token
+        if "https://purl.imsglobal.org/spec/lti-dl/claim/deep_linking_settings" in id_token:
+            next_url += '?' + urlencode(id_token["https://purl.imsglobal.org/spec/lti-dl/claim/deep_linking_settings"])
+
         self.redirect(next_url)
         self.log.debug(f"Redirecting user {user.id} to {next_url}")
 
