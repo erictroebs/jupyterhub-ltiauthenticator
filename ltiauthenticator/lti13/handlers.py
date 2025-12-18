@@ -4,7 +4,7 @@ import json
 import re
 import uuid
 from typing import Any, Dict, Optional, cast
-from urllib.parse import quote, unquote, urlparse, urlencode
+from urllib.parse import quote, unquote, urlparse
 
 from jupyterhub.handlers import BaseHandler  # type: ignore
 from jupyterhub.utils import url_path_join  # type: ignore
@@ -399,9 +399,12 @@ class LTI13CallbackHandler(BaseHandler):
         """Redirect user agent to next url that has been received in the login initiation request."""
         next_url = self.get_next_url(user)
 
-        # add deep_linking_settings if available in id_token
+        # if deep linking request, then add id_token to next url
         if "https://purl.imsglobal.org/spec/lti-dl/claim/deep_linking_settings" in id_token:
-            next_url += '?' + urlencode(id_token["https://purl.imsglobal.org/spec/lti-dl/claim/deep_linking_settings"])
+            id_token_json = json.dumps(id_token).encode("utf-8")
+            id_token_base64 = base64.urlsafe_b64encode(id_token_json).decode("utf-8")
+
+            next_url += f"?payload={id_token_base64}"
 
         self.redirect(next_url)
         self.log.debug(f"Redirecting user {user.id} to {next_url}")
