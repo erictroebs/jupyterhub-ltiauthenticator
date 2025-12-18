@@ -133,6 +133,13 @@ class LTI13LaunchValidator(LoggingConfigurable):
         except jwt.PyJWTError as e:
             raise TokenError(str(e))
 
+        # `azp` is optional. If there is only one value for `aud`, it should be safe to choose `azp` = `aud`.
+        # https://www.imsglobal.org/spec/lti-dl/v2p0
+        # https://openid.net/specs/openid-connect-core-1_0.html#IDToken
+        if 'azp' not in id_token:
+            if isinstance(id_token['aud'], str) or len(id_token['aud']) == 1:
+                id_token['azp'] = id_token['aud']
+
         return id_token
 
     def _check_message_type(self, id_token: Dict[str, Any]) -> None:
