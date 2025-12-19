@@ -137,8 +137,10 @@ class LTI13LaunchValidator(LoggingConfigurable):
         # https://www.imsglobal.org/spec/lti-dl/v2p0
         # https://openid.net/specs/openid-connect-core-1_0.html#IDToken
         if 'azp' not in id_token:
-            if isinstance(id_token['aud'], str) or len(id_token['aud']) == 1:
+            if isinstance(id_token['aud'], str):
                 id_token['azp'] = id_token['aud']
+            elif isinstance(id_token['aud'], list) and len(id_token['aud']) == 1:
+                id_token['azp'] = id_token['aud'][0]
 
         return id_token
 
